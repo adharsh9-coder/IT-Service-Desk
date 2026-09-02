@@ -69,7 +69,7 @@ def create_app(test_config=None):
     # Health check route for Kubernetes probes
     @app.route('/health')
     def health_check():
-        return "App is healthy", 200
+        return "App is healthy and working", 200
 
     return app
 
