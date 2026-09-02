@@ -1,13 +1,16 @@
 pipeline {
     agent any
 
+    triggers{
+        githubPush()
+    }
+
     stages {
         stage('Checkout') {
-             steps {
-                 checkout scm
-             }
+            steps {
+                checkout scm
+            }
         }
-
         stage('Test') {
             steps {
                 bat '''
@@ -17,7 +20,6 @@ pipeline {
                 '''
             }
         }
-
         stage('Build Docker Image') {
             steps {
                 bat '''
@@ -25,7 +27,6 @@ pipeline {
                 '''
             }
         }
-
         stage('Push to Docker Hub') {
             steps {
                 withCredentials([
@@ -41,6 +42,29 @@ pipeline {
                     '''
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            emailext(
+                subject: "SUCCESS ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                    <h2>Jenkins build Successful</h2>
+                    <p><b>URL</b>: ${env.BUILD_URL}</p>
+                """,
+                to: "internadharsh9@gmail.com" 
+            )
+        }
+        failure {
+            emailext(
+                subject: "FAILED ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                    <h2>Jenkins build Failed</h2>
+                    <p><b>URL</b>: ${env.BUILD_URL}</p>
+                """,
+                to: "internadharsh9@gmail.com" 
+            )
         }
     }
 }
