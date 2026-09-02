@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <a href="{{ url_for('user_bp.dashboard_redirect') }}" class="text-decoration-none">&larr; Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column: Main Content & Comments -->
+    <div class="col-md-8">
+        
+        <!-- Ticket Header & Description -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">#{{ ticket.id }}: {{ ticket.title }}</h4>
+                <span class="badge bg-secondary fs-6">{{ ticket.status }}</span>
+            </div>
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Reported by {{ ticket.creator.username }} in {{ ticket.category.name }}</h6>
+                <p style="white-space: pre-wrap;">{{ ticket.description }}</p>
+
+                {% if ticket.attachments %}
+                <hr>
+                <h6 class="text-muted">Attachments:</h6>
+                <ul class="list-unstyled">
+                    {% for attachment in ticket.attachments %}
+                    <li>
+                        <a href="{{ url_for('ticket_bp.uploaded_file', filename=attachment.file_name) }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1">
+                            📄 {{ attachment.file_name }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+
+        <!-- Comments Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Communication Log</h5>
+            </div>
+            <div class="card-body">
+                <!-- Display Existing Comments -->
+                {% if ticket.comments %}
+                    {% for comment in ticket.comments %}
+                        <div class="p-3 mb-3 bg-light border rounded">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>{{ comment.author.username }}</strong>
+                                <small class="text-muted">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-0">{{ comment.comment_text }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted fst-italic">No comments yet.</p>
+                {% endif %}
+                
+                <hr>
+                
+                <!-- Add New Comment Form -->
+                <form action="{{ url_for('ticket_bp.add_comment', ticket_id=ticket.id) }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-2">
+                        <textarea class="form-control" name="comment_text" rows="3" placeholder="Type your reply here..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="attachment" class="form-label small text-muted">Attach a Screenshot (Optional)</label>
+                        <input class="form-control form-control-sm" type="file" id="attachment" name="attachment" accept=".png,.jpg,.jpeg,.pdf,.txt,.log">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-sm">Post Reply</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Metadata, Actions & Audit Trail -->
+    <div class="col-md-4">
+        
+        <!-- Metadata -->
+        <div class="card shadow-sm mb-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">Ticket Details</h6>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Priority:</strong> {{ ticket.sla.priority_level }}</li>
+                <li class="list-group-item text-danger"><strong>Due By:</strong><br> {{ ticket.due_date.strftime('%Y-%m-%d %H:%M') }}</li>
+                <li class="list-group-item text-muted"><small>Created: {{ ticket.created_at.strftime('%Y-%m-%d') }}</small></li>
+            </ul>
+        </div>
+
+        {% if ticket.status == 'Resolved' %}
+        <div class="card shadow-sm mb-4 border-success">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0">Resolution Feedback</h6>
+            </div>
+            <div class="card-body">
+                
+                <!-- Display Existing Feedback -->
+                {% if ticket.feedback %}
+                    <div class="mb-2">
+                        <strong>Rating:</strong>
+                        <span class="text-warning fs-5">
+                            {% for i in range(ticket.feedback.rating) %}★{% endfor %}
+                        </span>
+                    </div>
+                    {% if ticket.feedback.comments %}
+                        <p class="mb-0 text-muted">"{{ ticket.feedback.comments }}"</p>
+                    {% endif %}
+                    
+                <!-- Show Submission Form to the Creator -->
+                {% elif g.user_id == ticket.creator_id %}
+                    <form action="{{ url_for('ticket_bp.submit_feedback', ticket_id=ticket.id) }}" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Rate the support received</label>
+                            <select class="form-select form-select-sm" name="rating" required>
+                                <option value="" disabled selected>Select a rating (1-5)...</option>
+                                <option value="5">5 - Excellent</option>
+                                <option value="4">4 - Good</option>
+                                <option value="3">3 - Average</option>
+                                <option value="2">2 - Poor</option>
+                                <option value="1">1 - Terrible</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <textarea class="form-control form-control-sm" name="comments" rows="2" placeholder="Optional comments..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm w-100">Submit Feedback</button>
+                    </form>
+                    
+                <!-- Fallback for Agents waiting on the user -->
+                {% else %}
+                    <p class="text-muted small mb-0">Waiting for the employee to submit their rating.</p>
+                {% endif %}
+                
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Agent/Admin Actions (Only visible to privileged roles) -->
+        {% if g.role in ['Support Agent', 'Admin'] %}
+        <div class="card shadow-sm mb-4 border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0">Agent Actions</h6>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('ticket_bp.update_status', ticket_id=ticket.id) }}" method="POST">
+                    <div class="input-group">
+                        <select class="form-select" name="status" required>
+                            <option value="" disabled selected>Change Status...</option>
+                            <option value="Open">Open</option>
+                            <option value="Assigned">Assigned</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Escalated">Escalated</option>
+                        </select>
+                        <button class="btn btn-dark" type="submit">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Audit Trail (History) -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">Audit Trail</h6>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                    {% for log in ticket.history|sort(attribute='changed_at', reverse=true) %}
+                        <li class="list-group-item" style="font-size: 0.85rem;">
+                            <strong>{{ log.action }}</strong> by {{ log.user.username }}<br>
+                            <span class="text-muted">{{ log.changed_at.strftime('%b %d, %H:%M') }}</span><br>
+                            {% if log.old_value %}
+                                <span class="text-danger border px-1 rounded">{{ log.old_value }}</span> &rarr; 
+                            {% endif %}
+                            <span class="text-success border px-1 rounded">{{ log.new_value }}</span>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item text-muted fst-italic">No history logged.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

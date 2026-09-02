@@ -1,0 +1,14 @@
+# Security
+.env
+secret.yml
+
+# Environments
+venv/
+
+# Caches and temporary files
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# User uploads
+uploads/

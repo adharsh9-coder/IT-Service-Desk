@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Support Agent Dashboard</h2>
+        
+
+
+
+
+        <p class="text-muted">Manage your queue and claim open tickets.</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Unassigned Queue -->
+    <div class="col-md-12 mb-5">
+        <div class="card shadow-sm mb-2 bg-light border-0">
+            <div class="card-body py-2">
+                <form method="GET" action="{{ url_for('ticket_bp.agent_dashboard') }}" class="row g-2 align-items-center">
+                    
+                    <!-- Hidden fields to preserve the Active Workload filters -->
+                    <input type="hidden" name="active_search" value="{{ active_filters.search or '' }}">
+                    <input type="hidden" name="active_category" value="{{ active_filters.category or '' }}">
+                    <input type="hidden" name="active_priority" value="{{ active_filters.priority or '' }}">
+                    <input type="hidden" name="active_status" value="{{ active_filters.status or '' }}">
+                    <input type="hidden" name="active_sort" value="{{ active_filters.sort or 'due_date_asc' }}">
+
+                    <div class="col-md-3">
+                        <input type="text" class="form-control form-control-sm" name="unassigned_search" placeholder="Search open tickets..." value="{{ unassigned_filters.search or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" name="unassigned_category">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if unassigned_filters.category == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" name="unassigned_priority">
+                            <option value="">All Priorities</option>
+                            {% for sla in slas %}
+                                <option value="{{ sla.id }}" {% if unassigned_filters.priority == sla.id|string %}selected{% endif %}>{{ sla.priority_level }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" name="unassigned_sort">
+                            <option value="due_date_asc" {% if unassigned_filters.sort == 'due_date_asc' %}selected{% endif %}>Due: Earliest</option>
+                            <option value="due_date_desc" {% if unassigned_filters.sort == 'due_date_desc' %}selected{% endif %}>Due: Latest</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex">
+                        <button type="submit" class="btn btn-sm btn-primary w-100 me-1">Filter</button>
+                        <a href="{{ url_for('ticket_bp.agent_dashboard') }}" class="btn btn-sm btn-outline-secondary" title="Clear All Filters">X</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Open Queue (Unassigned)</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Priority</th>
+                            <th>Due Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in unassigned_tickets %}
+                        <tr>
+                            <td>#{{ ticket.id }}</td>
+                            <td>{{ ticket.title }}</td>
+                            <td>{{ ticket.sla.priority_level }}</td>
+                            <td>{{ ticket.due_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <!-- A form disguised as a button to hit the POST endpoint -->
+                                <form action="{{ url_for('ticket_bp.assign_ticket', ticket_id=ticket.id) }}" method="POST">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Claim Ticket</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No unassigned tickets right now.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Assigned Tickets -->
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-2 bg-light border-0">
+            <div class="card-body py-2">
+                <form method="GET" action="{{ url_for('ticket_bp.agent_dashboard') }}" class="row g-2 align-items-center">
+                    
+                    <!-- Hidden fields to preserve the Unassigned Queue filters -->
+                    <input type="hidden" name="unassigned_search" value="{{ unassigned_filters.search or '' }}">
+                    <input type="hidden" name="unassigned_category" value="{{ unassigned_filters.category or '' }}">
+                    <input type="hidden" name="unassigned_priority" value="{{ unassigned_filters.priority or '' }}">
+                    <input type="hidden" name="unassigned_sort" value="{{ unassigned_filters.sort or 'due_date_asc' }}">
+
+                    <div class="col-md-2">
+                        <input type="text" class="form-control form-control-sm" name="active_search" placeholder="Search workload..." value="{{ active_filters.search or '' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" name="active_category">
+                            <option value="">All Categories</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if active_filters.category == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" name="active_priority">
+                            <option value="">All Priorities</option>
+                            {% for sla in slas %}
+                                <option value="{{ sla.id }}" {% if active_filters.priority == sla.id|string %}selected{% endif %}>{{ sla.priority_level }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" name="active_status">
+                            <option value="">All Statuses</option>
+                            <option value="Assigned" {% if active_filters.status == 'Assigned' %}selected{% endif %}>Assigned</option>
+                            <option value="In Progress" {% if active_filters.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                            <option value="Resolved" {% if active_filters.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                            <option value="Escalated" {% if active_filters.status == 'Escalated' %}selected{% endif %}>Escalated</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select form-select-sm" name="active_sort">
+                            <option value="due_date_asc" {% if active_filters.sort == 'due_date_asc' %}selected{% endif %}>Due: Earliest</option>
+                            <option value="due_date_desc" {% if active_filters.sort == 'due_date_desc' %}selected{% endif %}>Due: Latest</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 d-flex">
+                        <button type="submit" class="btn btn-sm btn-primary w-100 me-1">Filter</button>
+                        <a href="{{ url_for('ticket_bp.agent_dashboard') }}" class="btn btn-sm btn-outline-secondary" title="Clear All Filters">X</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">My Active Workload</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Due Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticket in my_tickets %}
+                        <tr>
+                            <td>#{{ ticket.id }}</td>
+                            <td>{{ ticket.title }}</td>
+                            <td><span class="badge bg-secondary">{{ ticket.status }}</span></td>
+                            <td>{{ ticket.due_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <a href="{{ url_for('ticket_bp.ticket_details', ticket_id=ticket.id) }}" class="btn btn-sm btn-primary">View Details</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">You have no active tickets assigned.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

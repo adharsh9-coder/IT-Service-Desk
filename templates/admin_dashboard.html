@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>Admin Command Center</h2>
+        <p class="text-muted">System Overview & Configuration</p>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="row row-cols-1 row-cols-md-5 g-3 mb-5">
+    
+    <!-- Total Tickets (No status filter = All) -->
+    <div class="col">
+        <a href="{{ url_for('admin_bp.admin_tickets') }}" class="text-decoration-none">
+            <div class="card text-center shadow-sm bg-white border-primary h-100 table-hover">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Total Tickets</h5>
+                    <h2 class="display-5 text-dark">{{ metrics.total }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Open / Unassigned -->
+    <div class="col">
+        <a href="{{ url_for('admin_bp.admin_tickets', status='Open') }}" class="text-decoration-none">
+            <div class="card text-center shadow-sm bg-white border-danger h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-danger">Open / Unassigned</h5>
+                    <h2 class="display-5 text-dark">{{ metrics.open }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- In Progress -->
+    <div class="col">
+        <a href="{{ url_for('admin_bp.admin_tickets', status='In Progress') }}" class="text-decoration-none">
+            <div class="card text-center shadow-sm bg-white border-warning h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">In Progress</h5>
+                    <h2 class="display-5 text-dark">{{ metrics.in_progress }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Escalated (The Missing Card!) -->
+    <div class="col">
+        <a href="{{ url_for('admin_bp.admin_tickets', status='Escalated') }}" class="text-decoration-none">
+            <div class="card text-center shadow-sm bg-white border-dark h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-dark">Escalated</h5>
+                    <h2 class="display-5 text-dark">{{ metrics.escalated }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Resolved -->
+    <div class="col">
+        <a href="{{ url_for('admin_bp.admin_tickets', status='Resolved') }}" class="text-decoration-none">
+            <div class="card text-center shadow-sm bg-white border-success h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Resolved</h5>
+                    <h2 class="display-5 text-dark">{{ metrics.resolved }}</h2>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Add Category Form -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Add Ticket Category</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('admin_bp.add_category') }}" method="POST">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="category_name" placeholder="e.g. Cloud Services" required>
+                        <button class="btn btn-primary" type="submit">Add Category</button>
+                    </div>
+                </form>
+                
+                <h6 class="mt-4">Current Categories:</h6>
+                <ul>
+                    {% for cat in categories %}
+                        <li>{{ cat.name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Provision Staff Form -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Provision New Staff Account</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('user_bp.create_staff') }}" method="POST">
+                    <div class="mb-2">
+                        <input type="text" class="form-control" name="username" placeholder="Username" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="email" class="form-control" name="email" placeholder="Email" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="password" class="form-control" name="password" placeholder="Temporary Password" required>
+                    </div>
+                    <div class="mb-3">
+                        <select class="form-select" name="role">
+                            <option value="Support Agent">Support Agent</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success w-100" type="submit">Create Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compliance & Security -->
+    <div class="col-md-12 mb-4">
+        <div class="card shadow-sm border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Compliance & Security</h5>
+            </div>
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>System Audit Logs</strong>
+                    <p class="text-muted mb-0 small">View chronological history of all ticket modifications, status changes, and SLA escalations.</p>
+                </div>
+                <a href="{{ url_for('admin_bp.view_audit_logs') }}" class="btn btn-outline-dark">Open Audit Explorer</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-3 align-items-center">
+    <div class="col">
+        <h2>System Audit Trail</h2>
+        <a href="{{ url_for('admin_bp.admin_dashboard') }}" class="text-decoration-none">&larr; Back to Command Center</a>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4 bg-light border-0">
+    <div class="card-body py-3">
+        <form method="GET" action="{{ url_for('admin_bp.view_audit_logs') }}" class="row g-2 align-items-center">
+            
+            <div class="col-auto">
+                <label class="form-label mb-0 fw-bold">From:</label>
+            </div>
+            <div class="col-md-3">
+                <!-- HTML5 Date Pickers -->
+                <input type="date" class="form-control" name="start_date" value="{{ start_date }}">
+            </div>
+            
+            <div class="col-auto ms-3">
+                <label class="form-label mb-0 fw-bold">To:</label>
+            </div>
+            <div class="col-md-3">
+                <input type="date" class="form-control" name="end_date" value="{{ end_date }}">
+            </div>
+
+            <div class="col-md-2 ms-auto text-end">
+                <button type="submit" class="btn btn-primary w-100">Filter Dates</button>
+            </div>
+            <div class="col-md-2 text-end">
+                <!-- A clever button that uses the exact same URL parameters but hits the export route -->
+                <a href="{{ url_for('admin_bp.export_audit_logs', start_date=start_date, end_date=end_date) }}" class="btn btn-success w-100">
+                    &darr; Download CSV
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white d-flex justify-content-between">
+        <h5 class="mb-0">Chronological Event Log</h5>
+        <span class="badge bg-light text-dark">{{ logs|length }} Records</span>
+    </div>
+    <div class="card-body p-0">
+        <div style="max-height: 600px; overflow-y: auto;">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Ticket ID</th>
+                        <th>Action Performed</th>
+                        <th>Changed By</th>
+                        <th>Previous State</th>
+                        <th>New State</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="text-nowrap">{{ log.changed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td><a href="{{ url_for('ticket_bp.ticket_details', ticket_id=log.ticket_id) }}">#{{ log.ticket_id }}</a></td>
+                        <td><strong>{{ log.action }}</strong></td>
+                        <td>{{ log.user.username if log.user else ('User #' ~ log.changed_by) }}</td>
+                        <td class="text-danger">{{ log.old_value or '-' }}</td>
+                        <td class="text-success">{{ log.new_value or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">No audit logs found for this date range.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

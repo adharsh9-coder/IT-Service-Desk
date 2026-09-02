@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-3 align-items-center">
+    <div class="col">
+        <h2>Global Ticket Explorer</h2>
+        <a href="{{ url_for('admin_bp.admin_dashboard') }}" class="text-decoration-none">&larr; Back to Command Center</a>
+    </div>
+</div>
+
+<!-- Global Filter Bar -->
+<div class="card shadow-sm mb-4 bg-light border-0">
+    <div class="card-body py-3">
+        <form method="GET" action="{{ url_for('admin_bp.admin_tickets') }}" class="row g-2 align-items-center">
+            
+            <div class="col-md-3">
+                <input type="text" class="form-control form-control-sm" name="search" placeholder="Search global tickets..." value="{{ filters.search or '' }}">
+            </div>
+            
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="category">
+                    <option value="">All Categories</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if filters.category == cat.id|string %}selected{% endif %}>{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="priority">
+                    <option value="">All Priorities</option>
+                    {% for sla in slas %}
+                        <option value="{{ sla.id }}" {% if filters.priority == sla.id|string %}selected{% endif %}>{{ sla.priority_level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="status">
+                    <option value="">All Statuses</option>
+                    <option value="Open" {% if filters.status == 'Open' %}selected{% endif %}>Open</option>
+                    <option value="Assigned" {% if filters.status == 'Assigned' %}selected{% endif %}>Assigned</option>
+                    <option value="In Progress" {% if filters.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Escalated" {% if filters.status == 'Escalated' %}selected{% endif %}>Escalated</option>
+                    <option value="Resolved" {% if filters.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <select class="form-select form-select-sm" name="sort">
+                    <option value="due_date_asc" {% if filters.sort == 'due_date_asc' %}selected{% endif %}>Due: Earliest First</option>
+                    <option value="due_date_desc" {% if filters.sort == 'due_date_desc' %}selected{% endif %}>Due: Latest First</option>
+                </select>
+            </div>
+
+            <div class="col-md-1 text-end">
+                <button type="submit" class="btn btn-sm btn-primary w-100 mb-1">Filter</button>
+                <a href="{{ url_for('admin_bp.admin_tickets') }}" class="btn btn-sm btn-outline-secondary w-100">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Global Ticket Table -->
+<div class="card shadow-sm border-dark">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">All Tickets</h5>
+        <span class="badge bg-light text-dark">Showing {{ tickets|length }} results</span>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>#{{ ticket.id }}</td>
+                    <td>{{ ticket.title }}</td>
+                    <td>{{ ticket.category.name }}</td>
+                    <td>
+                        {% if ticket.status == 'Resolved' %}
+                            <span class="badge bg-success">Resolved</span>
+                        {% elif ticket.status == 'Escalated' %}
+                            <span class="badge bg-dark">Escalated</span>
+                        {% elif ticket.status == 'Open' %}
+                            <span class="badge bg-danger">Open</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">{{ ticket.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ ticket.due_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('ticket_bp.ticket_details', ticket_id=ticket.id) }}" class="btn btn-sm btn-primary">View / Manage</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No tickets found matching these filters.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
